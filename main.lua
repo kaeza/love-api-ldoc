@@ -51,31 +51,43 @@ local function writefunction(f, func)
 	end
 end
 
-local function writetype(f, typ)
-	--print("type: "..typ.name)
+local function writetype(name, typ)
+	local f = assert(io.open("tmp/"..name..".ldoc", "w"))
+
+	assert(conf:write(("\t%q,\n"):format(name..".ldoc")))
+
 	assert(f:write("---"
-			.."\n-- "..formatdesc(typ.description)
-			.."\n"))
+			.."\n-- "..formatdesc(typ.description)))
+
+	if typ.constructors then
+		local base = name:gsub("[^.]+$", "")
+		assert(f:write("\n--"
+				.."\n-- **Constructors:**"
+				.."\n--"))
+		for _, ctor in ipairs(typ.constructors) do
+			assert(f:write("\n-- * `"..base..ctor.."`"))
+		end
+	end
+
 	if typ.parenttype then
-		assert(f:write("--"
+		assert(f:write("\n--"
 				.."\n-- **Extends:** `"..convtype(typ.parenttype).."`"))
 	end
 	if typ.subtypes and typ.subtypes[1] then
-		assert(f:write("--"
+		assert(f:write("\n--"
 				.."\n-- **Subtypes:**"
 				.."\n--"))
 		for _, st in ipairs(typ.subtypes) do
 			assert(f:write("\n-- * `"..convtype(st).."`"))
 		end
 	end
-	assert(f:write("\n--\n-- @type "..typ.name))
-	if typ.constructor then
-		assert(f:write("\n-- @see "..typ.constructor))
-	end
+	assert(f:write("\n--\n-- @classmod "..name))
 	assert(f:write("\n\n"))
 	for _, func in ipairs(typ.functions or { }) do
 		writefunction(f, func)
 	end
+
+	assert(f:close())
 end
 
 local function writemodule(name, desc, t)
@@ -86,17 +98,23 @@ local function writemodule(name, desc, t)
 	assert(f:write("---"
 			.."\n-- "..formatdesc(desc)
 			.."\n-- @module "..name
-			.."\n\n"))
+			.."\n"))
+
+	for _, typ in ipairs(t.types or { }) do
+		assert(f:write("-- @see "..name.."."..typ.name.."\n"))
+	end
+
+	assert(f:write("\n"))
 
 	for _, func in ipairs(t.functions or { }) do
 		writefunction(f, func)
 	end
 
-	for _, typ in ipairs(t.types or { }) do
-		writetype(f, typ)
-	end
-
 	assert(f:close())
+
+	for _, typ in ipairs(t.types or { }) do
+		writetype(name.."."..typ.name, typ)
+	end
 
 	for _, m in ipairs(t.modules or { }) do
 		writemodule(name.."."..m.name, m.description, m)
