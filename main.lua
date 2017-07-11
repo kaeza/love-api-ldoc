@@ -127,6 +127,10 @@ local function writemodule(name, desc, t)
 		writefunction(f, func)
 	end
 
+	for _, func in ipairs(t.callbacks or { }) do
+		writefunction(f, func)
+	end
+
 	assert(f:close())
 
 	for _, typ in ipairs(t.types or { }) do
