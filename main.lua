@@ -23,8 +23,12 @@ local function convtype(t)
 	return typemap[t] or t
 end
 
+local function mdescape(text)
+	return (text:gsub("[()%[%]*/~`#]", "\\%0"))
+end
+
 local function formatdesc(desc)
-	return (desc:gsub("\n", "\n-- "))
+	return mdescape(desc:gsub("\n", "\n-- "))
 end
 
 local function writefunction(f, func)
@@ -54,14 +58,14 @@ end
 local function writeenum(f, name, enum)
 	assert(f:write("---"
 			.."\n-- "..formatdesc(enum.description)
-			.."\n-- @table "..name
+			.."\n--"
 			.."\n"))
 	for _, k in ipairs(enum.constants) do
-		assert(f:write("-- @field "..k.name
+		assert(f:write("-- * "..mdescape(k.name)..":"
 				.." "..formatdesc(k.description)
 				.."\n"))
 	end
-	assert(f:write("\n"))
+	assert(f:write("-- @table "..name.."\n\n"))
 end
 
 local function writetype(name, typ)
