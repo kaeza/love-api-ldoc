@@ -51,6 +51,19 @@ local function writefunction(f, func)
 	end
 end
 
+local function writeenum(f, name, enum)
+	assert(f:write("---"
+			.."\n-- "..formatdesc(enum.description)
+			.."\n-- @table "..name
+			.."\n"))
+	for _, k in ipairs(enum.constants) do
+		assert(f:write("-- @field "..k.name
+				.." "..formatdesc(k.description)
+				.."\n"))
+	end
+	assert(f:write("\n"))
+end
+
 local function writetype(name, typ)
 	local f = assert(io.open("tmp/"..name..".ldoc", "w"))
 
@@ -106,6 +119,10 @@ local function writemodule(name, desc, t)
 
 	assert(f:write("\n"))
 
+	for _, enum in ipairs(t.enums or { }) do
+		writeenum(f, name.."."..enum.name, enum)
+	end
+
 	for _, func in ipairs(t.functions or { }) do
 		writefunction(f, func)
 	end
@@ -124,6 +141,9 @@ end
 local function collecttypes(name, t)
 	for _, typ in ipairs(t.types or { }) do
 		typemap[typ.name] = name.."."..typ.name
+	end
+	for _, enum in ipairs(t.enums or { }) do
+		typemap[enum.name] = name.."."..enum.name
 	end
 	for _, m in ipairs(t.modules or { }) do
 		collecttypes(name.."."..m.name, m)
